@@ -6,7 +6,8 @@ L=5e3;%每次读取的数据量
 
 load('CBlist.mat');%读取CB1码表
 
-CB=CBs(1,:);
+prn_id=1;
+CB=CBs(prn_id,:);
 NH=[0, 0, 0, 0, 0, 1, 0, 0, 1, 1,0, 1, 0, 1, 0, 0, 1, 1, 1, 0]*2-1;
 
 Fs=5e6;%Hz
@@ -22,11 +23,11 @@ omg_N_dll=B_L_dll*4;
 T=1e-3;
 T_coh=40;
 % FLL 环路滤波器参数
-B_L_fll=20;
+B_L_fll=10;
 omg_N_fll=B_L_fll/0.53;
 a2=1.414;
 % PLL 环路滤波器参数
-B_L_pll=20;
+B_L_pll=10;
 omg_N_pll=B_L_pll/0.7845;
 a3=1.1;
 b3=2.4;
@@ -206,6 +207,13 @@ hold off;plot(phase_e);
 %hold on;plot(phase_pll,'g');
 
 s=(real(p)>0)*2-1;
-ss=xcorr(s,NH);
 figure(4);
-plot(ss);
+if(sum(prn_id==[1 2 3 4 5])>0)
+    %GEO
+    plot(s)
+else
+    %MEO/IGSO   
+    ss=xcorr(s,NH);    
+    plot(ss);
+end
+

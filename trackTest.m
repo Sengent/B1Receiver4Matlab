@@ -1,33 +1,44 @@
-clear
-load('data.mat');
+ï»¿clear
+%load('data.mat');
+data_fname = '../B1.dat' ;
+file_id = fopen(data_fname, 'rb');
+L=5e3;%æ¯æ¬¡è¯»å–çš„æ•°æ®é‡
+data_buffer1=zeros(1,L); %å­˜æ”¾è¯»å‡ºçš„æ•°æ®ï¼ˆå¤ä¿¡å·)
+data_buffer2=zeros(1,L);
+%è¯»ç¬¬ä¸€äºŒæ®µä¿¡å·
+[row_array, ele_count] = fread(file_id, L*2, 'int8') ;
+data_buffer1=row_array(1:2:2*L)'+row_array(2:2:2*L)'*1i;
+[row_array, ele_count] = fread(file_id, L*2, 'int8') ;
+data_buffer2(:)=row_array(1:2:2*L)'+row_array(2:2:2*L)'*1i;
+
 load('CBlist.mat');
 CB=CBs(7,:);
 NH=[0, 0, 0, 0, 0, 1, 0, 0, 1, 1,0, 1, 0, 1, 0, 0, 1, 1, 1, 0]*2-1;
 
 Fs=5e6;%Hz
-test_time=4000;%ms
+test_time=20000;%ms
 fll_time=1000;
-freq_0=0;%ÖĞÆµ
+freq_0=0;%ä¸­é¢‘
 CB_width=Fs/(2.046e6);
 bi=763;
 
-% DLL »·Â·ÂË²¨Æ÷²ÎÊı
+% DLL ç¯è·¯æ»¤æ³¢å™¨å‚æ•°
 B_L_dll=0.1;
 omg_N_dll=B_L_dll*4;
 T=1e-3;
 T_coh=40;
-% FLL »·Â·ÂË²¨Æ÷²ÎÊı
+% FLL ç¯è·¯æ»¤æ³¢å™¨å‚æ•°
 B_L_fll=10;
 omg_N_fll=B_L_fll/0.53;
 a2=1.414;
-% PLL »·Â·ÂË²¨Æ÷²ÎÊı
+% PLL ç¯è·¯æ»¤æ³¢å™¨å‚æ•°
 B_L_pll=10;
 omg_N_pll=B_L_pll/0.7845;
 a3=1.1;
 b3=2.4;
 
 % catch
-[freq_i,code_phase,rate]=catchB1(CB,cdata(1:5e3));
+[freq_i,code_phase,rate]=catchB1(CB,data_buffer1);
 
 m=code_phase;
 code_phase_0=0;
@@ -61,19 +72,20 @@ w_2_pll=zeros(1,test_time-fll_time);
 n=2;
 nn=2;
 phase=0;
-while m<test_time*5e3-5e3
-    data=cdata(m+1:m+5e3);
+
+while n<test_time
+    data=[data_buffer1(m+1:end),data_buffer2(1:m)];
     %CB_width=Fs/(1.023e6*(1+1/bi));
-    % »ìÆµ
+    % æ··é¢‘
     u=data.*exp(-1j*(2*pi*freq_i*t+theta_i));
     %% Code Tracking Loop
-    % ¸´ÖÆ±¾µØCAÂë
+    % å¤åˆ¶æœ¬åœ°CAç 
     n_c=mod(floor((t*Fs+code_phase)/CB_width+1),1023);
     n_c(n_c==0)=1023;
     cb_p=CB(n_c);
     cb_e=cb_p([3:end,1,2]);
     cb_l=cb_p([end-1,end,1:end-2]);
-    % Ïà¹ØÆ÷
+    % ç›¸å…³å™¨
     p(n)=sum(double(cb_p).*u);
     l(n)=sum(double(cb_l).*u);
     e(n)=sum(double(cb_e).*u);
@@ -130,7 +142,7 @@ while m<test_time*5e3-5e3
         w_2_pll(nn)=w_2_pll(nn-1)+((w_1_pll(nn)+w_1_pll(nn-1))/2+a3*omg_N_pll^2*phase_e(nn))*T;
         phase_pll(nn)=(w_2_pll(nn)+w_2_pll(nn-1))/2;
         %theta_i=theta_0+phase_pll(n);
-        % Ëø¶¨¼ì²â
+        % é”å®šæ£€æµ‹
         phase=phase_pll(nn);
         nn=nn+1;
     end
@@ -143,7 +155,7 @@ while m<test_time*5e3-5e3
     end
     %code_phase=code_phase_0;
     
-    %Çø¼äµ÷Õû
+    %åŒºé—´è°ƒæ•´
     if code_phase>0.8
         code_phase=code_phase-1;
         m=m-1;
@@ -152,13 +164,27 @@ while m<test_time*5e3-5e3
         m=m+1;
     end
     
-    m=m+5e3;
+    if(m>=1&&m<=5e3-1)
+        data_buffer1=data_buffer2;
+        [row_array, ele_count] = fread(file_id, L*2, 'int8') ;
+        if ele_count < L*2
+            exit(0) ;        
+        else
+            data_buffer2=row_array(1:2:2*L)'+row_array(2:2:2*L)'*1i;
+        end
+        else
+        m=mod(m,5e3);
+    end
+    
+    %m=m+5e3;
     theta_0=theta_0+5e3/Fs*2*pi*freq_i;
     theta_i=theta_0+phase;
     %theta_i=mod(theta_i,pi*2);
     
     n=n+1;    
 end
+fclose(file_id);
+
 figure(1)
 hold off;plot(code_phase_e/Fs*3e8)
 hold on;plot(code_phase_e_dll/Fs*3e8,'r')
@@ -172,3 +198,8 @@ hold off;plot(phase_e);
  phase(phase>pi/2)=phase(phase>pi/2)-pi;
  hold on;plot(phase,'r');
 %hold on;plot(phase_pll,'g');
+
+s=(real(p)>0)*2-1;
+ss=xcorr(s,NH);
+figure(4);
+plot(ss);

@@ -1,4 +1,4 @@
-function [fd,Cd,rate]=catchB1(g,cdata)
+function [fd,Cd,rate,dd]=catchB1(g,cdata,d1)
 Fs=5e6;%²ÉÑùÂÊ
 L=length(cdata);
 t=(1:L)/Fs;
@@ -28,24 +28,27 @@ for m=-F:F
     temp=ifft(conj(CA).*DATA);
     d(m+F+1,:)=abs(temp).^2;
 end
-figure(100);mesh(d);
 
+dd=d+d1;
+figure(100);mesh(dd);
+d=dd;
 PEAK1=max(max(d));
+
 [x,y]=find(d==PEAK1);
 %Ä¨µôfirst peak
 for m=y-5:y+5
     for n=x-2:x+2
         mm=m;
         nn=n;
-        if(m>5000)
-            mm=m-5000;
+        if(m>L)
+            mm=m-L;
         elseif(m<1)
-            mm=m+5000;
+            mm=m+L;
         end
         if(n>2*F+1)
-            nn=n-5000;
+            nn=n-2*F+1;
         elseif(n<1)
-            nn=n+5000;
+            nn=n+2*F+1;
         end
         d(nn,mm)=0;
     end

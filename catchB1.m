@@ -46,7 +46,7 @@ for m=y-5:y+5
             mm=m+L;
         end
         if(n>2*F+1)
-            nn=n-2*F+1;
+            nn=n-2*F-1;
         elseif(n<1)
             nn=n+2*F+1;
         end

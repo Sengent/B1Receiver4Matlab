@@ -6,7 +6,7 @@ L=5e3;%每次读取的数据量
 
 load('CBlist.mat');%读取CB1码表
 
-prn_id=14;
+prn_id=2;
 CB=CBs(prn_id,:);
 NH=[0, 0, 0, 0, 0, 1, 0, 0, 1, 1,0, 1, 0, 1, 0, 0, 1, 1, 1, 0]*2-1;
 
@@ -45,11 +45,16 @@ data_buffer2=row_array(1:2:2*L)'+row_array(2:2:2*L)'*1i;
 
 %若未捕获
 
+n=1;
 while rate<1.5
     data_buffer1=data_buffer2;
     [row_array, ~] = fread(file_id, L*2, 'int8') ;
     data_buffer2=row_array(1:2:2*L)'+row_array(2:2:2*L)'*1i;
     [freq_i,code_phase,rate,dd]=catchB1(CB,data_buffer1,dd);
+    n=n+1;
+    if(n>10)
+        return;
+    end
     %dd=d+dd;
     %mesh(dd);
 end
@@ -229,14 +234,38 @@ hold off;plot(phase_e);
  hold on;plot(phase,'r');
 %hold on;plot(phase_pll,'g');
 
-s=(real(p)>0)*2-1;
+
 figure(4);
+p=p(1100:end);
 if(sum(prn_id==[1 2 3 4 5])>0)
     %GEO
+    LL=length(p);
+    if mod(LL,2)==1
+        LL=LL-1;
+    end
+    s=real(p)>0;
+    e=sum(abs(s(4:2:LL)-s(3:2:LL)));
+    o=sum(abs(s(3:2:LL)-s(2:2:LL-1)));
+    if(e>o)
+        s=real(p(3:2:LL)+p(2:2:LL-1));
+    else
+        s=real(p(4:2:LL)+p(3:2:LL));
+    end
+    s=(s>0)*2-1;
     plot(s)
 else
-    %MEO/IGSO   
-    ss=xcorr(s,NH);    
-    plot(ss);
+    %MEO/IGSO 
+    s=(real(p)>0)*2-1;
+    %ss=xcorr(s,NH);    
+    ss=conv(fliplr(NH),s);
+    %plot(ss);
+    T=zeros(1,20);
+    for m=1:20:length(ss)-19
+        T=T+abs(ss(m:m+19));
+    end
+    
+    n=find(T==max(T));
+    plot(ss(n+20:20:end-10));
+    figure(6);bar(T);
 end
- figure(5) ;plot(p(2000:end),'.')
+figure(5) ;plot(p,'.')

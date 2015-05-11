@@ -6,7 +6,7 @@ L=5e3;%每次读取的数据量
 
 load('CBlist.mat');%读取CB1码表
 
-prn_id=2;
+prn_id=4;
 CB=CBs(prn_id,:);
 NH=[0, 0, 0, 0, 0, 1, 0, 0, 1, 1,0, 1, 0, 1, 0, 0, 1, 1, 1, 0]*2-1;
 
@@ -41,23 +41,30 @@ data_buffer1=row_array(1:2:2*L)'+row_array(2:2:2*L)'*1i;
 data_buffer2=row_array(1:2:2*L)'+row_array(2:2:2*L)'*1i;
 
 % catch
-[freq_i,code_phase,rate,dd]=catchB1(CB,data_buffer1,0);
+[freq_i,code_phase,rate,dd]=catchB1([CB,zeros(1,2046)],[data_buffer1,data_buffer2],0);
 
 %若未捕获
 
+%dd=0;
 n=1;
-while rate<1.5
-    data_buffer1=data_buffer2;
-    [row_array, ~] = fread(file_id, L*2, 'int8') ;
-    data_buffer2=row_array(1:2:2*L)'+row_array(2:2:2*L)'*1i;
-    [freq_i,code_phase,rate,dd]=catchB1(CB,data_buffer1,dd);
-    n=n+1;
-    if(n>10)
-        return;
-    end
+%m=code_phase;
+while rate<1.6
+     
+     [row_array, ~] = fread(file_id, L*2, 'int8') ;
+     data_buffer1=row_array(1:2:2*L)'+row_array(2:2:2*L)'*1i;
+     [row_array, ~] = fread(file_id, L*2, 'int8') ;
+     data_buffer2=row_array(1:2:2*L)'+row_array(2:2:2*L)'*1i;
+    [freq_i,code_phase,rate,dd]=catchB1([CB,zeros(1,2046)],[data_buffer1,data_buffer2],dd);
+     n=n+1;
+     if(n>10)
+         return;
+     end
+%    m=m+100;
     %dd=d+dd;
     %mesh(dd);
 end
+
+
 %{
 %%确认
 m=code_phase;
@@ -94,6 +101,8 @@ w_2_fll(2)=freq_i;
 %freq_state=zeros(1,fll_time);
 %phase_lock_state=zeros(1,test_time);
 fll_state=true;
+detect=zeros(1,test_time);
+
 phase_e=zeros(1,test_time-fll_time);
 phase_pll=zeros(1,test_time-fll_time);
 w_1_pll=zeros(1,2);
@@ -117,9 +126,12 @@ while n<test_time
     cb_e=cb_p([3:end,1,2]);
     cb_l=cb_p([end-1,end,1:end-2]);
     % 相关器
-    p(n)=sum(double(cb_p).*u);
+    temp=double(cb_p).*u;
+    detect(n)=(sum(real(temp)).^2+sum(imag(temp)).^2)./sum(real(temp).^2+imag(temp).^2);
+    p(n)=sum(temp);
     l(n)=sum(double(cb_l).*u);
     e(n)=sum(double(cb_e).*u);
+    
     % Code Discriminator
     if(mod(n,T_coh)==0)
         Lt=sum(abs(l(n-T_coh+1:n)));    Et=sum(abs(e(n-T_coh+1:n)));
@@ -164,9 +176,10 @@ while n<test_time
         I_ps=real(p(n));
         Q_ps=imag(p(n));
         p_angle=atan2(Q_ps,I_ps);
-        if p_angle<-pi/2;
+        while p_angle<-pi/2;
             p_angle=p_angle+pi;
-        elseif p_angle>pi/2
+        end
+        while p_angle>pi/2
             p_angle=p_angle-pi;
         end
         phase_e(nn)=p_angle;
@@ -186,7 +199,7 @@ while n<test_time
     code_phase=code_phase-freq_i/bi/1000;
     %code_phase=code_phase_0+code_phase_e_dll(n);
     if(mod(n,T_coh)==0)
-        code_phase=code_phase+code_phase_e_dll(floor(n/T_coh)+1);
+        code_phase=code_phase+code_phase_e_dll(floor(n/T_coh)+1)*CB_width;
     end
     %code_phase=code_phase_0;
     
@@ -269,3 +282,6 @@ else
     figure(6);bar(T);
 end
 figure(5) ;plot(p,'.')
+
+figure(7);
+plot(detect);

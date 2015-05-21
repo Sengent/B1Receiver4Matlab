@@ -1,4 +1,4 @@
-function [fd,Cd,rate,dd]=catchB1(g,cdata,d1)
+function [fd,Cd,rate,dd]=acquisit(g,cdata,d1)
 Fs=5e6;%²ÉÑùÂÊ
 L=length(cdata);
 t=(0:L-1)/Fs;

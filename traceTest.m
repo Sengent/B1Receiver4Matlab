@@ -6,7 +6,7 @@ L=5e3;%每次读取的数据量
 
 load('CBlist.mat');%读取CB1码表
 
-prn_id=9;
+prn_id=7;
 CB=CBs(prn_id,:);
 NH=[0, 0, 0, 0, 0, 1, 0, 0, 1, 1,0, 1, 0, 1, 0, 0, 1, 1, 1, 0]*2-1;
 
@@ -18,7 +18,7 @@ CB_width=Fs/(2.046e6);
 bi=763;
 
 % DLL 环路滤波器参数
-B_L_dll=0.01;
+B_L_dll=0.2;
 omg_N_dll=B_L_dll*4;
 T=1e-3;
 T_coh=40;
@@ -27,7 +27,7 @@ B_L_fll=10;
 omg_N_fll=B_L_fll/0.53;
 a2=1.414;
 % PLL 环路滤波器参数
-B_L_pll=10;
+B_L_pll=30;
 omg_N_pll=B_L_pll/0.7845;
 a3=1.1;
 b3=2.4;
@@ -50,7 +50,7 @@ data_buffer2=row_array(1:2:2*L)'+row_array(2:2:2*L)'*1i;
 % data_buffer2=row_array(1:2:2*L)'+row_array(2:2:2*L)'*1i;
 % end
 % catch
-[freq_i,code_phase,rate,dd]=catchB1([CB,zeros(1,2046)],[data_buffer1,data_buffer2],0);
+[freq_i,code_phase,rate,dd]=acquisit([CB,zeros(1,2046)],[data_buffer1,data_buffer2],0);
 
 %若未捕获
 
@@ -63,7 +63,7 @@ while rate<1.6
      data_buffer1=row_array(1:2:2*L)'+row_array(2:2:2*L)'*1i;
      [row_array, ~] = fread(file_id, L*2, 'int8') ;
      data_buffer2=row_array(1:2:2*L)'+row_array(2:2:2*L)'*1i;
-     [freq_i,code_phase,rate,dd]=catchB1([CB,zeros(1,2046)],[data_buffer1,data_buffer2],dd);
+     [freq_i,code_phase,rate,dd]=acquisit([CB,zeros(1,2046)],[data_buffer1,data_buffer2],dd);
      n=n+1;
      if(n>10)
          return;
@@ -78,9 +78,9 @@ end
 %%确认
 m=code_phase;
 for n=1:10
-    [freq_i,code_phase,rate]=catchB1(CB,...
+    [freq_i,code_phase,rate]=acquisit(CB,...
         [data_buffer1(m+1:end),data_buffer2(1:m)],0);
-    %[freq_i,code_phase,rate]=catchB1(CB,[data_buffer1,data_buffer2]);
+    %[freq_i,code_phase,rate]=acquisit(CB,[data_buffer1,data_buffer2]);
     data_buffer1=data_buffer2;
     [row_array, ~] = fread(file_id, L*2, 'int8') ;
     data_buffer2=row_array(1:2:2*L)'+row_array(2:2:2*L)'*1i;

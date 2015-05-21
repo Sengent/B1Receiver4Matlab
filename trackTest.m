@@ -1,24 +1,24 @@
 clear
 %load('data.mat');
-data_fname = 'E:/资料/大三上/SRT/houhou/B1.dat' ;
+data_fname = '../B1.dat' ;
 file_id = fopen(data_fname, 'rb');
 L=5e3;%每次读取的数据量
 
 load('CBlist.mat');%读取CB1码表
 
-prn_id=4;
+prn_id=9;
 CB=CBs(prn_id,:);
 NH=[0, 0, 0, 0, 0, 1, 0, 0, 1, 1,0, 1, 0, 1, 0, 0, 1, 1, 1, 0]*2-1;
 
 Fs=5e6;%Hz
-test_time=5000;%ms
+test_time=25000;%ms
 fll_time=1000;
 freq_0=0;%中频
 CB_width=Fs/(2.046e6);
 bi=763;
 
 % DLL 环路滤波器参数
-B_L_dll=0.4;
+B_L_dll=0.01;
 omg_N_dll=B_L_dll*4;
 T=1e-3;
 T_coh=40;
@@ -27,7 +27,7 @@ B_L_fll=10;
 omg_N_fll=B_L_fll/0.53;
 a2=1.414;
 % PLL 环路滤波器参数
-B_L_pll=18;
+B_L_pll=10;
 omg_N_pll=B_L_pll/0.7845;
 a3=1.1;
 b3=2.4;
@@ -113,14 +113,14 @@ fll_state=true;
 detect=zeros(1,test_time);
 
 phase_e=zeros(1,test_time-fll_time);
-phase_pll=zeros(1,test_time-fll_time);
+freq_pll=zeros(1,test_time-fll_time);
 w_1_pll=zeros(1,2);
 w_2_pll=zeros(1,2);
 %w_1_pll(1)=
 
 n=2;
 nn=2;
-phase=0;
+delta_freq=0;
 
 while n<test_time
     data=[data_buffer1(m+1:end),data_buffer2(1:m)];
@@ -179,6 +179,7 @@ while n<test_time
             %w_2_pll(2)=angle(p(n))+5e3/Fs*2*pi*freq_i;
             theta_0=angle(p(n));
             theat_i=theta_0;
+            freq_0=freq_i;
             nn=2;
         end
     else
@@ -198,22 +199,22 @@ while n<test_time
         w_1_pll(2)=w_1_pll(2)+omg_N_pll^3*T*phase_e(nn);
         w_2_pll(1)=w_2_pll(2);
         w_2_pll(2)=w_2_pll(2)+((w_1_pll(1)+w_1_pll(2))/2+a3*omg_N_pll^2*phase_e(nn))*T;
-        phase_pll(nn)=(w_2_pll(2)+w_2_pll(1))/2;
+        freq_pll(nn)=(w_2_pll(2)+w_2_pll(1))/2;
         %theta_i=theta_0+phase_pll(n);
         % 锁定检测
-        phase=phase_pll(nn);
+        delta_freq=freq_pll(nn);
         nn=nn+1;
     end
     
-    
+    %码相位调整
     code_phase=code_phase-freq_i/bi/1000;
-    %code_phase=code_phase_0+code_phase_e_dll(n);
+    
     if(mod(n,T_coh)==0)
         code_phase=code_phase+code_phase_e_dll(floor(n/T_coh)+1)*CB_width;
     end
-    %code_phase=code_phase_0;
     
-    %区间调整
+    
+    %积分区间调整
     if code_phase>0.8
         code_phase=code_phase-1;
         m=m-1;
@@ -234,30 +235,37 @@ while n<test_time
         m=mod(m,5e3);
     end
     
-    %m=m+5e3;
+    %相位/频率调整
     theta_0=theta_0+5e3/Fs*2*pi*freq_i;
-    theta_i=theta_0+phase;
-    %theta_i=theta_0+5e3/Fs*2*pi*phase;
-    %theta_i=mod(theta_i,pi*2);
+   
+    theta_i=theta_0+delta_freq/5;%这里需要调整增益大小
+    
+    if(~fll_state)
+        % 锁相环频率的调整
+        freq_i=freq_0+delta_freq*5;%这里需要调整增益大小
+    end
     
     n=n+1;    
 end
 fclose(file_id);
 
 figure(1)
-hold off;plot(code_phase_e/Fs*3e8)
-hold on;plot(code_phase_e_dll/Fs*3e8,'r')
+hold off;plot(code_phase_e/Fs*3e8);
+hold on;plot(code_phase_e_dll/Fs*3e8,'r');
+title('码环跟踪情况');
 
 figure(2)
 %hold off;plot(freq_e);
-hold on;plot(freq_fll,'r');
+plot(freq_fll,'r');
+title('锁频环跟踪情况')
+
 figure(3)
 hold off;plot(phase_e);
- phase=mod(phase_pll,pi);
- phase(phase>pi/2)=phase(phase>pi/2)-pi;
- hold on;plot(phase,'r');
+ delta_freq=freq_pll;
+ %phase(phase>pi/2)=phase(phase>pi/2)-pi;
+ hold on;plot(delta_freq,'r');
 %hold on;plot(phase_pll,'g');
-
+title('PLL跟踪情况')
 
 figure(4);
 p=p(1100:end);
@@ -277,6 +285,7 @@ if(sum(prn_id==[1 2 3 4 5])>0)
     end
     s=(s>0)*2-1;
     plot(s)
+    title('电文')
 else
     %MEO/IGSO 
     s=(real(p)>0)*2-1;
@@ -291,12 +300,17 @@ else
     n=find(T==max(T));
     s=sign(ss(n+20:20:end-10));
     plot(s);
-    figure(6);bar(T);
+    title('电文')
+    figure(6);bar(T);title('统计直方图')
 end
+
 figure(5) ;plot(p,'.')
+title('星座图')
+axis equal;
 
 figure(7);
 plot(detect);
+title('锁定检测')
 
 s_s=zeros(1,4000);
 lll=length(s);

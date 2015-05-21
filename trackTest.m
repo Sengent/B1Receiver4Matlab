@@ -1,6 +1,6 @@
 clear
 %load('data.mat');
-data_fname = '../B1.dat' ;
+data_fname = 'E:/资料/大三上/SRT/houhou/B1.dat' ;
 file_id = fopen(data_fname, 'rb');
 L=5e3;%每次读取的数据量
 
@@ -18,7 +18,7 @@ CB_width=Fs/(2.046e6);
 bi=763;
 
 % DLL 环路滤波器参数
-B_L_dll=0.2;
+B_L_dll=0.4;
 omg_N_dll=B_L_dll*4;
 T=1e-3;
 T_coh=40;
@@ -27,7 +27,7 @@ B_L_fll=10;
 omg_N_fll=B_L_fll/0.53;
 a2=1.414;
 % PLL 环路滤波器参数
-B_L_pll=5;
+B_L_pll=18;
 omg_N_pll=B_L_pll/0.7845;
 a3=1.1;
 b3=2.4;
@@ -237,6 +237,7 @@ while n<test_time
     %m=m+5e3;
     theta_0=theta_0+5e3/Fs*2*pi*freq_i;
     theta_i=theta_0+phase;
+    %theta_i=theta_0+5e3/Fs*2*pi*phase;
     %theta_i=mod(theta_i,pi*2);
     
     n=n+1;    
@@ -288,10 +289,20 @@ else
     end
     
     n=find(T==max(T));
-    plot(ss(n+20:20:end-10));
+    s=sign(ss(n+20:20:end-10));
+    plot(s);
     figure(6);bar(T);
 end
 figure(5) ;plot(p,'.')
 
 figure(7);
 plot(detect);
+
+s_s=zeros(1,4000);
+lll=length(s);
+s_s(1:lll)=s;
+tong=[1,1,1,-1,-1,-1,1,-1,-1,1,-1];
+tong=[tong,zeros(1,3989)];
+ro=ifft(fft(tong).*conj(fft(s_s)));
+find(ro==11)
+find(ro==-11)

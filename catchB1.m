@@ -8,7 +8,7 @@ T=floor(t*2.046e6)+1;
 cam=g(T);
 CA=fft(double(cam));
 
-% +-10kHz
+% +-5kHz
 %F=round(1e4*L/Fs);
 F=20;
 d=zeros(F+1,L);
@@ -18,25 +18,13 @@ for m=0:F
     %fd=(m-floor(F/2)+1)*1e4/F;
     data=cdata.*exp(-1j*2*pi*250*m*t);
     DATA=fft(data);
-    
-    %if(m>0)
-    %    DATA=DATA([m+1:end,1:m]);
-    %elseif(m<0)
-    %    DATA=DATA([end+m+1:end,1:end+m]);
-    %end
-    %DATA=DATA;
+ 
     temp=ifft(conj(CA).*DATA);
     d(m+F+1,:)=abs(temp).^2;
     if(m==0)continue;end
     data=cdata.*exp(1j*2*pi*500*m*t);
     DATA=fft(data);
-    %DATA=[DATA(1),conj(DATA(end:-1:2502)),conj(DATA(2501:-1:2))];
-    %if(m>0)
-    %    DATA=DATA([m+1:end,1:m]);
-    %elseif(m<0)
-    %    DATA=DATA([end+m+1:end,1:end+m]);
-    %end
-    %DATA=DATA;
+   
     temp=ifft(conj(CA).*DATA);
     d(F+1-m,:)=abs(temp).^2;
 end

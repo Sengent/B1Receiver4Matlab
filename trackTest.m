@@ -18,7 +18,7 @@ CB_width=Fs/(2.046e6);
 bi=763;
 
 % DLL 环路滤波器参数
-B_L_dll=0.1;
+B_L_dll=0.2;
 omg_N_dll=B_L_dll*4;
 T=1e-3;
 T_coh=40;
@@ -34,12 +34,21 @@ b3=2.4;
 
 %data_buffer1=zeros(1,L); %存放读出的数据（复信号)
 %data_buffer2=zeros(1,L);
+
 %读第一二段信号
+
 [row_array, ~] = fread(file_id, L*2, 'int8') ;
 data_buffer1=row_array(1:2:2*L)'+row_array(2:2:2*L)'*1i;
 [row_array, ~] = fread(file_id, L*2, 'int8') ;
 data_buffer2=row_array(1:2:2*L)'+row_array(2:2:2*L)'*1i;
 
+% 
+% for m=1:100
+% [row_array, ~] = fread(file_id, L*2, 'int8') ;
+% data_buffer1=row_array(1:2:2*L)'+row_array(2:2:2*L)'*1i;
+% [row_array, ~] = fread(file_id, L*2, 'int8') ;
+% data_buffer2=row_array(1:2:2*L)'+row_array(2:2:2*L)'*1i;
+% end
 % catch
 [freq_i,code_phase,rate,dd]=catchB1([CB,zeros(1,2046)],[data_buffer1,data_buffer2],0);
 
@@ -54,7 +63,7 @@ while rate<1.6
      data_buffer1=row_array(1:2:2*L)'+row_array(2:2:2*L)'*1i;
      [row_array, ~] = fread(file_id, L*2, 'int8') ;
      data_buffer2=row_array(1:2:2*L)'+row_array(2:2:2*L)'*1i;
-    [freq_i,code_phase,rate,dd]=catchB1([CB,zeros(1,2046)],[data_buffer1,data_buffer2],dd);
+     [freq_i,code_phase,rate,dd]=catchB1([CB,zeros(1,2046)],[data_buffer1,data_buffer2],dd);
      n=n+1;
      if(n>10)
          return;
@@ -120,8 +129,8 @@ while n<test_time
     u=data.*exp(-1j*(2*pi*freq_i*t+theta_i));
     %% Code Tracking Loop
     % 复制本地CA码
-    n_c=mod(floor((t*Fs+code_phase)/CB_width+1),1023);
-    n_c(n_c==0)=1023;
+    n_c=mod(floor((t*Fs+code_phase)/CB_width+1),2046);
+    n_c(n_c==0)=2046;
     cb_p=CB(n_c);
     cb_e=cb_p([3:end,1,2]);
     cb_l=cb_p([end-1,end,1:end-2]);
@@ -143,7 +152,8 @@ while n<test_time
         code_phase_e_dll(nnn)=w_dll+2*omg_N_dll*code_phase_e(nnn);
     end
     
-    % Code Lock Detector    
+    % Code Lock Detector
+   
     if(n<=2)
         
     elseif(fll_state)
@@ -194,7 +204,7 @@ while n<test_time
         phase=phase_pll(nn);
         nn=nn+1;
     end
-   
+    
     
     code_phase=code_phase-freq_i/bi/1000;
     %code_phase=code_phase_0+code_phase_e_dll(n);

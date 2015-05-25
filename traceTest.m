@@ -129,8 +129,8 @@ while n<test_time
     u=data.*exp(-1j*(2*pi*freq_i*t+theta_i));
     %% Code Tracking Loop
     % ¸´ÖÆ±¾µØCAÂë
-    n_c=mod(floor((t*Fs+code_phase)/CB_width+1),2046);
-    n_c(n_c==0)=2046;
+    n_c=mod(floor((t*Fs+code_phase)/CB_width),2046)+1;
+    %n_c(n_c==0)=2046;
     cb_p=CB(n_c);
     cb_e=cb_p([3:end,1,2]);
     cb_l=cb_p([end-1,end,1:end-2]);

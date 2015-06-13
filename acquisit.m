@@ -1,10 +1,11 @@
 function [fd,Cd,rate,dd]=acquisit(g,cdata,d1)
-Fs=5e6;%采样率
+global Fs CB_F;
+%Fs=5e6;%采样率
 L=length(cdata);
 t=(0:L-1)/Fs;
 %g=ca(a,b);
 
-T=floor(t*2.046e6)+1;
+T=floor(t*CB_F)+1;
 cam=g(T);
 CA=fft(double(cam));
 
@@ -18,13 +19,13 @@ for m=0:F
     %fd=(m-floor(F/2)+1)*1e4/F;
     data=cdata.*exp(-1j*2*pi*250*m*t);
     DATA=fft(data);
- 
+    
     temp=ifft(conj(CA).*DATA);
     d(m+F+1,:)=abs(temp).^2;
     if(m==0)continue;end
     data=cdata.*exp(1j*2*pi*500*m*t);
     DATA=fft(data);
-   
+    
     temp=ifft(conj(CA).*DATA);
     d(F+1-m,:)=abs(temp).^2;
 end

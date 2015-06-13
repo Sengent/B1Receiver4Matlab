@@ -1,6 +1,7 @@
 function [fd,Cd,rate,dd]=acquisit(g,cdata,d1)
 global Fs CB_F L;
 %Fs=5e6;%采样率
+%Fs=5e6;%采样率
 LENGTH=length(cdata);
 t=(0:LENGTH-1)/Fs;
 %g=ca(a,b);

@@ -13,7 +13,7 @@ global Fs CB_LENGTH CB_F L;
 Fs=5e6;%Hz
 CB_LENGTH=2046;
 CB_F=CB_LENGTH*1000;
-L=Fs/1000;%每次读取的数据量1ms
+L=round(Fs/1000);%每次读取的数据量1ms
 test_time=25000;%ms
 fll_time=1000;
 freq_0=0;%起始频率
@@ -95,7 +95,7 @@ code_phase_0=0;
 code_phase=0;
 theta_i=0;
 theta_0=0;
-t=(0:4999)/Fs;
+t=(0:L-1)/Fs;
 
 p=zeros(1,test_time);
 e=zeros(1,test_time);

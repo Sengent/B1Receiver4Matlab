@@ -1,7 +1,6 @@
 function [fd,Cd,rate,dd]=acquisit(g,cdata,d1)
 global Fs CB_F L;
 %Fs=5e6;%采样率
-%Fs=5e6;%采样率
 LENGTH=length(cdata);
 t=(0:LENGTH-1)/Fs;
 %g=ca(a,b);
@@ -31,9 +30,9 @@ for m=0:F
     d(F+1-m,:)=abs(temp).^2;
 end
 
-dd=d+d1;
+dd=d(:,1:L)+d1;
 figure(100);mesh(dd);
-d=dd(:,1:L);
+d=dd;
 PEAK1=max(max(d));
 
 [x,y]=find(d==PEAK1);

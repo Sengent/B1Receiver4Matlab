@@ -18,7 +18,7 @@ CB_width=Fs/(2.046e6);
 bi=763;
 
 % DLL 环路滤波器参数
-B_L_dll=0.2;
+B_L_dll=0.05;
 omg_N_dll=B_L_dll*4;
 T=1e-3;
 T_coh=40;
@@ -27,7 +27,7 @@ B_L_fll=10;
 omg_N_fll=B_L_fll/0.53;
 a2=1.414;
 % PLL 环路滤波器参数
-B_L_pll=30;
+B_L_pll=10;
 omg_N_pll=B_L_pll/0.7845;
 a3=1.1;
 b3=2.4;

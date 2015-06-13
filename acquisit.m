@@ -56,7 +56,4 @@ PEAK2=max(max(d));
 rate=PEAK1/PEAK2;
 Cd=mod(y,5000);
 fd=(x-F-1)*250;
-%data=cdata.*exp(-1j*2*pi*fd*t);
-%DATA=fft(data);
-%temp=ifft(conj(CA).*DATA);
-%plot(abs(temp).^2);
+

@@ -2,7 +2,6 @@ clear
 %load('data.mat');
 data_fname = '../B1.dat' ;
 file_id = fopen(data_fname, 'rb');
-L=5e3;%每次读取的数据量
 
 load('CBlist.mat');%读取CB1码表
 
@@ -10,12 +9,16 @@ prn_id=7;
 CB=CBs(prn_id,:);
 NH=[0, 0, 0, 0, 0, 1, 0, 0, 1, 1,0, 1, 0, 1, 0, 0, 1, 1, 1, 0]*2-1;
 
+global Fs CB_LENGTH CB_F L;
 Fs=5e6;%Hz
+CB_LENGTH=2046;
+CB_F=CB_LENGTH*1000;
+L=Fs/1000;%每次读取的数据量1ms
 test_time=25000;%ms
 fll_time=1000;
-freq_0=0;%中频
-CB_width=Fs/(2.046e6);
-bi=763;
+freq_0=0;%起始频率
+CB_width=Fs/(CB_F);
+bi=777;
 
 % DLL 环路滤波器参数
 B_L_dll=0.05;
@@ -176,7 +179,7 @@ while n<test_time
         freq_i=freq_0+freq_fll(n);  
         if(n>=fll_time)
             fll_state=false;
-            %w_2_pll(2)=angle(p(n))+5e3/Fs*2*pi*freq_i;
+            %w_2_pll(2)=angle(p(n))+L/Fs*2*pi*freq_i;
             theta_0=angle(p(n));
             theat_i=theta_0;
             freq_0=freq_i;
@@ -223,7 +226,7 @@ while n<test_time
         m=m+1;
     end
     
-    if(m>=1&&m<=5e3-1)
+    if(m>=1&&m<=L-1)
         data_buffer1=data_buffer2;
         [row_array, ele_count] = fread(file_id, L*2, 'int8') ;
         if ele_count < L*2
@@ -232,11 +235,11 @@ while n<test_time
             data_buffer2=row_array(1:2:2*L)'+row_array(2:2:2*L)'*1i;
         end
         else
-        m=mod(m,5e3);
+        m=mod(m,L);
     end
     
     %相位/频率调整
-    theta_0=theta_0+5e3/Fs*2*pi*freq_i;
+    theta_0=theta_0+L/Fs*2*pi*freq_i;
    
     theta_i=theta_0+delta_freq/5;%这里需要调整增益大小
     
